@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{% block title %} -NotePAD{% endblock %}</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ asset('style/css/bootstrap.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('style/font-awesome-4.7.0/css/font-awesome.min.css') }}"/>
+        {% block stylesheets %}{% endblock %}
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
+    </head>
+    <body>
+    <div class="container">
+            <div class=col-md-8 role=main>
+                <div class=bs-docs-section>
+                    <h1 class=page-header>{% block form_title %}{% endblock %}</h1>
+                </div>
+                {% block body %}{% endblock %}
+                {% block javascripts %}{% endblock %}
+                <script src="//code.jquery.com/jquery.min.js"></script>
+                <script src="{{ asset('style/js/bootstrap.min.js') }}"></script>
+            </div>
+        </div>
+    </body>
+</html>

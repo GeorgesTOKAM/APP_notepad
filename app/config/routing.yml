@@ -1,0 +1,5 @@
+
+ec_notepad:
+    resource: "@ECNotepadBundle/Controller/"
+    type:    annotation
+    prefix:    /

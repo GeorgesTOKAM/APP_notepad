@@ -1,0 +1,19 @@
+{% extends '::base.html.twig' %}
+{% block title %}Ajouter catégorie{% endblock %}
+{% block form_title %}Ajouter une catégorie{% endblock %}
+{% block body %}
+    {{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
+    <p class="bg-warning">{{ form_errors(form) }}</p>
+    <div class="form-group">
+        {{ form_label(form.nom, "Nom")}}
+        {{ form_widget(form.nom, {'attr': {'class': 'form-control'}}) }}
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-default">Sauvegarder</button>
+    </div>
+    <div class="form-group">
+        <a class="alert-link" href="{{ path('list_cat') }}">Retour à la liste des catégories</a>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

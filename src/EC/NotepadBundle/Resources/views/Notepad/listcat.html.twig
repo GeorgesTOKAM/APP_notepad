@@ -1,0 +1,33 @@
+{% extends '::base.html.twig' %}
+{% block title %}Liste catégorie{% endblock %}
+{% block form_title %}Liste des catégories{% endblock %}
+{% block body %}<br>
+        <div class="row">
+            <a href="{{ path('ajt_cat') }}" class="btn btn-primary">Ajouter une categorie</a>
+        </div><br>
+        <div class="row">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Id</th><th>Nom</th><th>Editer</th><th>Supprimer</th>
+                <tr>
+                </thead>
+                <tbody>
+                {% for Categorie in categories %}
+                    <tr>
+                        <td>{{ Categorie.id }}</td>
+                        <td>{{ Categorie.nom }}</td>
+                        <td><a href="{{ path('edit_cat', {'id':Categorie.id }) }}">Modifier</a></td>
+                        <td><a href="{{ path('del_cat', {'id':Categorie.id }) }}">Supprimer</a></td>
+                    </tr>
+                {% else %}
+                    <h3>Pas de catégorie ajoutée!</h3>
+                {% endfor %}
+                </tbody>
+
+            </table>
+        <br><br>
+            <a class="alert-link" href="{{ path('list_note') }}">Retour à la liste des notes</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends '::base.html.twig' %}
+{% block title %}Ajouter Note{% endblock %}
+{% block form_title %}Ajouter Une Note{% endblock %}
+{% block body %}
+    {{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
+    <p class="bg-warning">{{ form_errors(form) }}</p>
+    <div class="form-group">
+        {{ form_label(form.title, "Title")}}
+        {{ form_widget(form.title, {'attr': {'class': 'form-control'}}) }}
+    </div>
+
+    <div class="form-group">
+        {{ form_label(form.content, "Content")}}
+        {{ form_widget(form.content, {'attr': {'class': 'form-control'}}) }}
+    </div>
+
+    <div class="form-group">
+        {{ form_label(form.date, "Date")}}
+        {{ form_widget(form.date, {'attr': {'class': 'dropdown'}}) }}
+    </div>
+
+    <div class="form-group">
+        {{ form_label(form.categorie, "Category")}}
+        {{ form_widget(form.categorie, {'attr': {'class': 'form-control'}}) }}
+    </div>
+
+    <div class="form-group">
+        {{ form_widget(form.Sauvegarder, {'attr': {'class': 'btn btn-default'}}) }}
+    </div>
+    <div class="form-group">
+        <a class="alert-link" href="{{ path('list_note') }}">Retour à la liste des Notes</a>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

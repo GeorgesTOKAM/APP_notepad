@@ -1,0 +1,31 @@
+{% extends '::base.html.twig' %}
+{% block title %}Acceuil{% endblock %}
+{% block form_title %}Liste des notes{% endblock %}
+{% block body %}
+    <div class="row">
+        <form class="navbar-form navbar-header" role="search">
+            <div class="panel-headin">
+                <ul class="list-inline">
+                    <li><a href="{{ path('ajt_note') }}">Ajouter une note</a></li>
+                    <li><a href="{{ path('ajt_cat') }}">Ajouter une categorie</a></li>
+                    <li><input type="text" class="form-control" placeholder="Rechercher un tag"></li>
+                </ul>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+    {% for note in listNotes %}
+        <div class="panel panel-default">
+            <div class="panel-heading"><b>{{ note.title }}</b> <br> {{ note.categorie.nom }} - {{ note.date|date('d/m/Y') }} </div>
+            <div class="panel-body">
+                <p class="text-justify">{{ note.content|raw }}</p><br>
+                <a href="{{ path('edit_note', {'id': note.id }) }}" class="btn btn-primary glyphicon glyphicon-edit"></a>
+                <a href="{{ path('del_note', {'id': note.id }) }}" class="btn btn-primary glyphicon glyphicon-remove"></a>
+            </div>
+        </div>
+    {% else %}
+        <h3>Pas de note ajoutée!</h3>
+    {% endfor %}
+    </div>
+{% endblock %}

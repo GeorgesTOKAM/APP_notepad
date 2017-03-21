@@ -1,0 +1,4 @@
+services:
+#    ec_notepad.example:
+#        class: EC\NotepadBundle\Example
+#        arguments: ["@service_id", "plain_value", "%parameter%"]
