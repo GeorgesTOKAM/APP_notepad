@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 
 
-class CategorieControlleur extends Controller
+class CategorieController extends Controller
 {
     /**
      * @Route("/categorie/liste", name="list_cat")
