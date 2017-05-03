@@ -46,86 +46,47 @@ class APIController extends Controller
         }
     }
 
-
     /**
      * @Route("/notes")
-     * @Method("GET")
+     * @Method({"GET"})
      */
-    public function allNotesAction()
-    {
-        $em = $this->getDoctrine()->getManager();
-        $notes = $em->getRepository('ECNotepadBundle:NoteClass')->findAll();
-        $arrayCollection = array();
-        foreach($notes as $note) {
-            $arrayCollection[] = array(
-                'id' => $note->getId(),
-                'title'=> $note->getTitle(),
-                'Date' => $note->getDate() -> format('d-m-y'),
-                'Categorie' => $note->getCategorie() -> getNom(),
-                'Content' => $note->getContent(),
-
-            );
-        }
-        return new JsonResponse($arrayCollection);
-    }
-
-    /**
-     * @Route("/notes")
-     * @Method("POST")
-     */
-    public function ajNotesAction(Request $request)
-    {
-        $note = new NoteClass();
-        $categories = new Categorie();
-        $em = $this->getDoctrine()->getManager();
-        $body = $request -> getContent();
-        if(empty($body)){
-            return new JsonResponse(['error' => 'Contenu vide']);
-        }
-        $data = json_decode($body, true);
-        if(!$data){
-            return new JsonResponse(['error'=> 'Le Contenu non Json']);
-        }
-        $note->setTitle($data['title']);
-        $note->setDate(new \DateTime('NOW'));
-        $note->setContent($data['content']);
-        $categories = $em->getRepository('ECNotepadBundle:Categorie')->findOneByNom($data['categorie']);
-        if(!$categories){
-            return new JsonResponse(['error' => 'Categorie non trouver']);
-        }
-        $note->setCategorie($categories);
-        $em->persist($note);
-        $em->flush();
-        return new JsonResponse(['reponse'=> 'la Note a ete ajoutee']);
-    }
-
-    /**
-     * @Route("/notes/{id}")
-     * @Method("DELETE")
-     */
-    public function delNoteAction(NoteClass $note, Request $request) {
-        $em = $this->getDoctrine()->getEntityManager();
-        $note = $em->getRepository('ECNotepadBundle:NoteClass')->findOneById($request->get('id'));
-        if (empty($note)) {
-            return new JsonResponse(['(404) message' => 'Pas de note trouvée pour cet ID'], Response::HTTP_NOT_FOUND);
-        }
-        $em->remove($note);
-        $em->flush();
-        return new JsonResponse(['sucess' => 'La note a ete supprimé']);
-    }
-
-
-    /**
-     * @Route("/Categories2")
-     * @Method({"GET", "OPTIONS"})
-     */
-    public function all2CatAction(Request $request)
+    public function allNotesAction(Request $request)
     {
         $this->crossOriginResource();
-        $resp = new Response();
-        $resp->headers->set('Content-Type','application/json');
-        $resp->headers->set('Access-Control','Allow-Origin','*');
-        $resp->headers->set('Access-Control','Allow-Methods','GET, OPTIONS');
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','GET, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+        $em = $this->getDoctrine()->getManager();
+
+        $notes = $em->getRepository('ECNotepadBundle:NoteClass')->findAll();
+        //var_dump($notes);
+        if(!$notes){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Notes is not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $rs->setStatusCode(Response::HTTP_OK);
+        $jsonserial = $serializer->serialize($notes, 'json');
+        $rs->setContent($jsonserial);
+        return $rs;
+    }
+    /**
+     * @Route("/Categories")
+     * @Method({"GET"})
+     */
+    public function allCatAction(Request $request)
+    {
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','GET, OPTIONS');
         $encoders = array(new XmlEncoder(),new JsonEncode());
         $normalizers = array(new ObjectNormalizer());
         $serializer = new Serializer($normalizers, $encoders);
@@ -133,275 +94,314 @@ class APIController extends Controller
 
         $cats = $em->getRepository('ECNotepadBundle:Categorie')->findAll();
         if(!$cats){
-            $resp->setStatusCode(Response::HTTP_NOT_FOUND);
-            $response = array('error'=> 'category not found');
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'category is not found');
             $jsoncontent = json_encode($response);
-            $resp->setContent($jsoncontent);
-            return $resp;
+            $rs->setContent($jsoncontent);
+            return $rs;
         }
-        $resp->setStatusCode(Response::HTTP_OK);
-        $jsoncontent = $serializer->serialize($cats, 'json');
-        $resp->setContent($jsoncontent);
-        return $resp;
+        $rs->setStatusCode(Response::HTTP_OK);
+        $jsonserial = $serializer->serialize($cats, 'json');
+        $rs->setContent($jsonserial);
+        return $rs;
     }
 
-
-
-
-
-
     /**
-     * @Route("/Categories")
-     * @Method({"GET", "OPTIONS"})
+     * @Route("/notes_post")
+     * @Method({"POST", "OPTIONS"})
      */
-    public function allCatAction()
+    public function PostNotesAction(Request $request)
     {
         $this->crossOriginResource();
-        $res = new Response();
-        $res->headers->set('Content-Type','application/json');
-        $res->headers->set('Access-Control','Allow-Origin','*');
-        $res->headers->set('Access-Control','Allow-Methods','GET, OPTIONS');
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','POST, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
 
+        $note = new NoteClass();
         $em = $this->getDoctrine()->getManager();
-        $cats = $em->getRepository('ECNotepadBundle:Categorie')->findAll();
-        $arrayCollection = array();
-        foreach($cats as $cat) {
-            $arrayCollection[] = array(
-                'id' => $cat->getId(),
-                'Categorie'=> $cat->getNom(),
-            );
+        $body = $request -> getContent();
+
+        if(empty($body)){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Notes is empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
         }
-        return new JsonResponse($arrayCollection);
+        $data = json_decode($body, true);
+        if(!$data){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Json Code is not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        if(empty($data['title'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Title is empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        if(empty($data['content'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'content is empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        if(empty($data['categorie'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'categoriy is empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $note->setTitle($data['title']);
+        $note->setDate(new \DateTime('NOW'));
+        $note->setContent($data['content']);
+        $categories = $em->getRepository('ECNotepadBundle:Categorie')->findOneByNom($data['categorie']);
+        if(!$categories){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Category does not exist');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $note->setCategorie($categories);
+        $em->persist($note);
+        $em->flush();
+
+        $rs->setStatusCode(Response::HTTP_OK);
+        $response = array('success'=> 'The Note is added');
+        $jsoncontent = json_encode($response);
+        $rs->setContent($jsoncontent);
+        return $rs;
     }
+
     /**
-     * @Route("/Categories")
-     * @Method("POST")
+     * @Route("/categorie_post")
+     * @Method({"POST", "OPTIONS"})
      */
-    public function addcatAction(Request $request )
+    public function PostCatAction(Request $request)
     {
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','POST, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+
+        $categories = new Categorie();
+        $em = $this->getDoctrine()->getManager();
+        $body = $request -> getContent();
+
+        if(empty($body)){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Body is empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $data = json_decode($body, true);
+        if(!$data){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Json Code is not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $catego = $em->getRepository('ECNotepadBundle:Categorie')->findOneByNom($data['categorie']);
+        if($catego){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'The category exists');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        if(empty($data['categorie'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'The category empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $categories->setNom($data['categorie']);
+        $em->persist($categories);
+        $em->flush();
+        $rs->setStatusCode(Response::HTTP_OK);
+        $response = array('success'=> 'The category is added');
+        $jsoncontent = json_encode($response);
+        $rs->setContent($jsoncontent);
+        return $rs;
+    }
+
+    /**
+     * @Route("/notes_put/{id}")
+     * @Method({"PUT", "OPTIONS"})
+     */
+    function putNotesAction($id, Request $request) {
+
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','PUT, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+
+        $note = new NoteClass();
         $body = $request -> getContent();
         $data = json_decode($body, true);
         $em = $this->getDoctrine()->getManager();
-        $cat = $em->getRepository('ECNotepadBundle:Categorie')->find($data['categorie']);
-        //$category->setNom($data['categorie']);
-        $em = $this->getDoctrine()->getManager();
-        //$em->persist($category);
-        $em->flush();
-        return new JsonResponse(['reponse' => $cat]);
-    }
-
-    /**
-     * @Route("/Cate")
-     * @Method("POST")
-     */
-    public function AddAction(Request $request )
-    {
-        $content = $request->getContent();
-        $validator = $this->get('validator');
-
-        if (empty($content)) {
-            $msg = "Le contenu est vide";
-            return new JsonResponse(['error' => $msg], self::SC_BADREQ);
+        $note = $em->getRepository('ECNotepadBundle:NoteClass')->findOneById($id);
+        if (empty($note)) {
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Note not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
         }
-
-        $category_data = json_decode($content, true);
-        if (!$category_data) {
-            $msg = "Content is not a valid json";
-            return new JsonResponse(['error' => $msg], self::SC_BADREQ);
-        }
-
-        $category = new Categorie();
-        if (!array_key_exists('name', $category_data)){
-            $category->setNom($category_data['name']);
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($category);
+        elseif(!empty($data['title']) && !empty($data['content']) && !empty($data['categorie'])){
+            $note->setTitle($data['title']);
+            $note->setContent($data['content']);
+            $categories = $em->getRepository('ECNotepadBundle:Categorie')->findOneByNom($data['categorie']);
+            $note->setCategorie($categories);
+            $note->setDate(new \DateTime('NOW'));
+            $em->persist($note);
             $em->flush();
+            $rs->setStatusCode(Response::HTTP_OK);
+            $response = array('succes'=> 'Note Updated Successfully');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        elseif(empty($data['title']) && !empty($data['content'])&& !empty($data['categorie'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'title not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        elseif(!empty($data['title']) && empty($data['content']) && !empty($data['categorie'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'content not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        elseif(!empty($data['title']) && !empty($data['content']) && empty($data['categorie'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'categorie not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
         }
         else{
-            $em = $this->getDoctrine()->getEntityManager();
-            $cats = $em->getRepository('ECNotepadBundle:Categorie')->findBynom($category_data['name']);
-            //$catss = $test->getNom();
-            return new JsonResponse(['reponse' => $cats]);
+            $rs->setStatusCode(Response::HTTP_NOT_ACCEPTABLE);
+            $response = array('error'=> 'note cannot be empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
         }
-
-
-        $errors = $validator->validate($category);
-
-        if (count($errors) > 0) {
-            $response_array['error'] = "Category is not valid";
-            return new JsonResponse($response_array, self::SC_BADREQ);
-        }
-
-
-
-        $em = $this->getDoctrine()->getManager();
-        $cats = $em->getRepository('ECNotepadBundle:Categorie')->findAll();
-        $arrayCollection = array();
-        foreach($cats as $cat) {
-            $arrayCollection[] = array(
-                'id' => $cat->getId(),
-                'Categorie'=> $cat->getNom(),
-            );
-        }
-        return new JsonResponse($arrayCollection);
     }
 
     /**
-     * @Route("/Categories/{id}")
+     * @Route("/categorie_put/{id}")
+     * @Method({"PUT", "OPTIONS"})
+     */
+    function putCatAction($id, Request $request) {
+
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','PUT, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+
+        $cate = new Categorie();
+        $body = $request -> getContent();
+        $data = json_decode($body, true);
+        $em = $this->getDoctrine()->getManager();
+        $cate = $em->getRepository('ECNotepadBundle:Categorie')->findOneById($id);
+        if (empty($cate)) {
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Category not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        elseif(!empty($data['categorie'])){
+            $cate->setNom($data['categorie']);
+            $em->persist($cate);
+            $em->flush();
+            $rs->setStatusCode(Response::HTTP_OK);
+            $response = array('succes'=> 'Category Updated Successfully');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        elseif(empty($data['categorie'])){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Category is empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        else{
+            $rs->setStatusCode(Response::HTTP_NOT_ACCEPTABLE);
+            $response = array('error'=> 'Category cannot be empty');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+    }
+    /**
+     * @Route("/Categories_del/{id}")
      * @Method("DELETE")
      */
     public function delcatAction(Categorie $cat) {
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','DELETE, OPTIONS');
         $em = $this->getDoctrine()->getEntityManager();
         $em->remove($cat);
         $em->flush();
-        return new JsonResponse(['sucess' => true]);
+        $rs->setStatusCode(Response::HTTP_OK);
+        $response = array('succes'=> 'Category delete Successfully');
+        $jsoncontent = json_encode($response);
+        $rs->setContent($jsoncontent);
+        return $rs;
     }
 
     /**
-     * @Route("/notes")
-     * @Method("POST")
+     * @Route("/notes_del/{id}")
+     * @Method("DELETE")
      */
-    public function addnoteAction(Request $request )
-    {
-        $cat = new Categorie();
-        $form = $this->createForm(CategorieType::class, $cat);
-        $form->handleRequest($request);
-        $body = $request -> getContent();
-        $data = json_decode($body, true);
-        //$em = $this->getDoctrine()->getManager();
-        // On avait déjà récupéré la liste des candidatures
-        $listApplications = $this->getDoctrine()
-            ->getRepository('ECNotepadBundle:Categorie')
-            //->findAll();
-            ->findOneByNom($cat->getNom());
-        ;
-        return new JsonResponse(['error' => $listApplications], 400);
-        /*$body = $request -> getContent();
-        if (empty($body)){
-            return new JsonResponse("Note vide veullez remplir", 200, array('Content-Type' => 'application/json'));
-        }
-        $data = json_decode($body, true);
-        //$em = $this->getDoctrine()->getRepository('ECNotepadBundle:Categorie')->find($data['categorie']);
-        //echo $data['categorie'];
-        if (!$data){
-            return new JsonResponse(['error' => "le contenue n'est pas json"], 400);
-        }
-        $em = $this->getDoctrine()->getManager();
-        $categories = $em->getRepository('ECNotepadBundle:Categorie')->findAll();
-        //$em = $this->getDoctrine()->getRepository('ECNotepadBundle:Categorie')->find($data['categorie']);
-        //$categori = $em->getRepository('ECNotepadBundle:Categorie')->find($data['categorie']);
-
-        return new JsonResponse(['error' => $categories], 400);*/
-
-
-        /*$note = new NoteClass();
-        $note -> setTitle($data['title']);
-        $note -> setContent($data['content']);
-        $note -> setDate(new \DateTime('NOW'));
-
-
-        $em = $this->getDoctrine()->getManager();
-        $categori = $em->getRepository('ECNotepadBundle:Categorie')->find($data['categorie']);
-        if ($categori === null){
-            echo $categori;
-            return new JsonResponse("Categorie null", 200, array('Content-Type' => 'application/json'));
-        }
-        else{
-            return new JsonResponse("Categorie ok", 200, array('Content-Type' => 'application/json'));
-        }*/
-        //$note -> setCategorie($categori);
-
-
-        //$em->persist($note);
-        //$em->flush();
-
-        //return new JsonResponse("OK", 200, array('Content-Type' => 'application/json'));
-    }
-
-    /**
-     * @Route("/notes/")
-     * @Method("POST")
-     */
-    public function createNoteAction(Request $request) {
-
-        $body = $request -> getContent();
-        $data = json_decode($body, true);
-        $note = new NoteClass();
-        $em = $this->getDoctrine()->getManager();
-        $category = $em->getRepository('ECNotepadBundle:Categorie')->find($data['categorie']);
-
-        $note -> setTitle($data['title']);
-        $note -> setContent($data['content']);
-        $note -> setDate($data['date']);
-        $note -> setCategorie($category);
-        $em->persist($note);
+    public function delnoteAction(NoteClass $not) {
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','DELETE, OPTIONS');
+        $em = $this->getDoctrine()->getEntityManager();
+        $em->remove($not);
         $em->flush();
-
-        return new JsonResponse("OK", 200, array('Content-Type' => 'application/json'));
-    }
-
-
-
-
-
-    /**
-     * @Route("/notes/{id}")
-     * @Method("PUT")
-     */
-    public function updateNoteAction(Request $request, NoteClass $note) {
-
-        $data = json_decode($request->getContent(), true);
-        $em = $this->getDoctrine()->getManager();
-        $category = $em->getRepository('ECNotepadBundle:Categorie')->find($data['Categorie']);
-
-        $note->setTitle($data['title']);
-        $note->setContent($data['content']);
-        $note->setCategorie($category);
-
-        $em->persist($note);
-        $em->flush();
-
-        return new Response();
-    }
-
-
-    /**
-     * @Route("/categories")
-     * @Method("GET")
-     */
-    function allCategoriesAction() {
-
-        $em = $this->getDoctrine()->getManager();
-        $notes = $em->getRepository('ECNotepadBundle:Categorie')->findAll();
-        $arrayCollection[] = array();
-        foreach($notes as $id) {
-            $arrayCollection[] = array(
-                'id' => $id->getId(),
-                'Nom'=> $id->getNom(),
-            );
-        }
-        return new JsonResponse($arrayCollection);
-    }
-
-    /**
-     * @Route("/categories")
-     * @Method("POST")
-     */
-    function newCatAction(Request $request) {
-        $category = new Categorie();
-        return $this->updateCategoryAction($request, $category);
-    }
-
-    /**
-     * @Route("/categories/{id}")
-     * @Method("PUT")
-     */
-    function updateCatAction(Request $request, Categorie $category) {
-        $data = json_decode($request->getContent(), true);
-        $category->setNom($data['nom']);
-        $em = $this->getDoctrine()->getManager();
-        $em->persist($category);
-        $em->flush();
-        return new JsonResponse('categorie ajouter');
+        $rs->setStatusCode(Response::HTTP_OK);
+        $response = array('succes'=> 'Note delete Successfully');
+        $jsoncontent = json_encode($response);
+        $rs->setContent($jsoncontent);
+        return $rs;
     }
 }
