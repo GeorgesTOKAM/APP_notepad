@@ -47,6 +47,38 @@ class APIController extends Controller
     }
 
     /**
+     * @Route("/one_note/{id}")
+     * @Method({"GET"})
+     */
+    public function oneNoteAction($id, Request $request)
+    {
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','*');
+        $rs->headers->set('Access-Control-Allow-Methods','GET, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+        $body = $request -> getContent();
+        $data = json_decode($body, true);
+        $em = $this->getDoctrine()->getManager();
+        $notes = $em->getRepository('ECNotepadBundle:NoteClass')->findOneById($id);
+        //var_dump($notes);
+        if(!$notes){
+            $rs->setStatusCode(Response::HTTP_NOT_FOUND);
+            $response = array('error'=> 'Notes is not found');
+            $jsoncontent = json_encode($response);
+            $rs->setContent($jsoncontent);
+            return $rs;
+        }
+        $rs->setStatusCode(Response::HTTP_OK);
+        $jsonserial = $serializer->serialize($notes, 'json');
+        $rs->setContent($jsonserial);
+        return $rs;
+    }
+
+    /**
      * @Route("/notes")
      * @Method({"GET"})
      */
@@ -367,7 +399,7 @@ class APIController extends Controller
     }
     /**
      * @Route("/Categories_del/{id}")
-     * @Method("DELETE")
+     * @Method({"DELETE", "OPTIONS"})
      */
     public function delcatAction(Categorie $cat) {
         $this->crossOriginResource();
@@ -375,6 +407,10 @@ class APIController extends Controller
         $rs->headers->set('Content-Type','application/json');
         $rs->headers->set('Access-Control-Allow-Origin','*');
         $rs->headers->set('Access-Control-Allow-Methods','DELETE, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+
         $em = $this->getDoctrine()->getEntityManager();
         $em->remove($cat);
         $em->flush();
@@ -386,8 +422,37 @@ class APIController extends Controller
     }
 
     /**
+     * @Route("/notes_delb")
+     * @Method({"DELETE", "OPTIONS"})
+     */
+    public function delnotesAction(Request $request) {
+        $this->crossOriginResource();
+        $rs = new Response();
+        $rs->headers->set('Content-Type','application/json');
+        $rs->headers->set('Access-Control-Allow-Origin','http://localhost:3000');
+        $rs->headers->set('Access-Control-Allow-Methods','DELETE, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+
+        $body = $request -> getContent();
+        $data = json_decode($body, true);
+        $em = $this->getDoctrine()->getManager();
+        $not = $em->getRepository('ECNotepadBundle:NoteClass')->findOneById($data['id']);
+
+        //$em = $this->getDoctrine()->getEntityManager();
+        $em->remove($not);
+        $em->flush();
+        $rs->setStatusCode(Response::HTTP_OK);
+        $response = array('succes'=> 'Note delete Successfully');
+        $jsoncontent = json_encode($response);
+        $rs->setContent($jsoncontent);
+        return $rs;
+    }
+
+    /**
      * @Route("/notes_del/{id}")
-     * @Method("DELETE")
+     * @Method({"DELETE", "OPTIONS"})
      */
     public function delnoteAction(NoteClass $not) {
         $this->crossOriginResource();
@@ -395,6 +460,10 @@ class APIController extends Controller
         $rs->headers->set('Content-Type','application/json');
         $rs->headers->set('Access-Control-Allow-Origin','*');
         $rs->headers->set('Access-Control-Allow-Methods','DELETE, OPTIONS');
+        $encoders = array(new XmlEncoder(),new JsonEncode());
+        $normalizers = array(new ObjectNormalizer());
+        $serializer = new Serializer($normalizers, $encoders);
+
         $em = $this->getDoctrine()->getEntityManager();
         $em->remove($not);
         $em->flush();
