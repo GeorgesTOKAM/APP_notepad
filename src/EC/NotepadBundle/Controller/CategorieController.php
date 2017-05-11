@@ -42,8 +42,9 @@ class CategorieController extends Controller
     {
         // on commence par cree une nouvelle categorie
         $categorie = new Categorie();
-
-        // on recupère le formulaire
+        $erreur ="";
+        $titre = "Ajouter une categorie";
+            // on recupère le formulaire
         $form = $this->createForm(CategorieType::class, $categorie);
         $form->handleRequest($request);
 
@@ -52,7 +53,7 @@ class CategorieController extends Controller
             $save = $this
                 ->getDoctrine()
                 ->getRepository('ECNotepadBundle:Categorie')
-                ->findOneByNom($categorie->getNom());
+                ->findBynom($categorie->getNom());
             if(!$save) {
                 //on enregistre le produit en base de donnée
                 $em = $this->getDoctrine()->getManager();
@@ -60,16 +61,18 @@ class CategorieController extends Controller
                 $em->flush(); // évacu les données vers la base de donnée
             }
             else {
-                echo 'La catégorie '.$categorie->getNom().' est déja enregistrée';
-                //return $this->redirectToRoute('ajt_cat', array('message' => 'La catégorie '+ $categorie->getNom() +' Existe déja'));
+                $erreur = "La categorie existe déja";
+                $formView = $form->createView();
+                return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form'=>$formView,'erreur' => $erreur, 'class' => '', 'class' => "alert alert-danger",'titre' => $titre));
+                
+                //return $this->redirectToRoute('ajt_cat', array('erreur' => "Cette categorie existe déjà."));
             }
-
-            //return new Response('Categorie Ajouté !');
+            
             return $this->redirectToRoute('list_cat');
         }
         $formView = $form->createView();
         // on genère le HTML du formulaire et on rend la vue
-        return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form'=>$formView));
+        return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form'=>$formView, 'erreur' => $erreur, 'class' => '','titre' => $titre));
     }
 
     /**
@@ -79,7 +82,8 @@ class CategorieController extends Controller
     {
         $cat = new Categorie();
         $save = $this ->getDoctrine()->getRepository('ECNotepadBundle:Categorie')->find($id);
-
+        $erreur = "";
+        $titre = "Modifier une categorie";
         $form = $this->createFormBuilder($cat) ->add('nom', TextType::class, array('data' => $save -> getNom(),))->getForm();
         $form->handleRequest($request);
 
@@ -94,15 +98,14 @@ class CategorieController extends Controller
                 $em->flush();
             }
             else {
-                echo 'La catégorie '.$cat->getNom().' est déja enregistrée';
+                $erreur = "La categorie existe déja";
+                $formView = $form->createView();
+                return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form'=>$formView, 'erreur' => $erreur, 'class' => "alert alert-danger",'titre' => $titre));
             }
             return $this->redirectToRoute('list_cat');
-            //return $this->redirect($this->generateUrl('list_cat', array('id' => $cat->getId())));
         }
-
-        //return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form' => $form->createView(),));
         $formView = $form->createView();
-        return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form'=>$formView));
+        return $this->render('ECNotepadBundle:Notepad:ajoutercat.html.twig', array('form'=>$formView, 'erreur' => $erreur, 'class' => '','titre' => $titre));
     }
 
     /**

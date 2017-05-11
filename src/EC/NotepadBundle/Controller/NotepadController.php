@@ -46,6 +46,7 @@ class NotepadController extends Controller
      */
     public function ajouternoteAction(Request $request)
     {
+        $titre = "Ajouter une Note";
         $note = new NoteClass(); // on cree une nouvelle note
         $form = $this->createForm(NoteClassType::class, $note);// on récupère le formulaire et on spécifi qu'il doit etre crée a partir de l'objet note
         $form->handleRequest($request);
@@ -59,7 +60,7 @@ class NotepadController extends Controller
 
         // on génère le HTML du formulaire crée
         $formView = $form->createView();
-        return $this->render('ECNotepadBundle:Notepad:ajouternote.html.twig', array('form'=>$formView));
+        return $this->render('ECNotepadBundle:Notepad:ajouternote.html.twig', array('form' => $form->createView(),'titre' => $titre));
     }
 
     /**
@@ -69,7 +70,7 @@ class NotepadController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $categories = $em->getRepository('ECNotepadBundle:Categorie')->findAll();
-
+        $titre = "Modifier la Note";
         $note = new NoteClass();
         $note = $em->getRepository('ECNotepadBundle:NoteClass')->findOneById($id);
 
@@ -102,9 +103,7 @@ class NotepadController extends Controller
             return $this->redirect($this->generateUrl('list_note', array(
                 'id' => $note->getId())));
         }
-        return $this->render('ECNotepadBundle:Notepad:ajouternote.html.twig', array(
-            'form' => $form->createView(),
-        ));
+        return $this->render('ECNotepadBundle:Notepad:ajouternote.html.twig', array('form' => $form->createView(),'titre' => $titre));
 
     }
 
